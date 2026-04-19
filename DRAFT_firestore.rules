@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == 'sihumin196@gmail.com' || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ); 
+    }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // --- Entity Validations ---
+
+    function isValidTournament(data) {
+      return data.keys().hasAll(['title', 'prize', 'fee', 'status']) &&
+             data.title is string && data.title.size() <= 100 &&
+             data.prize is string && data.prize.size() <= 50 &&
+             data.fee is string && data.fee.size() <= 50 &&
+             data.status is string && data.status.size() <= 30;
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['tournamentId', 'userId', 'teamName', 'leaderId', 'status']) &&
+             data.tournamentId is string && data.tournamentId.size() <= 64 &&
+             data.userId == request.auth.uid &&
+             data.teamName is string && data.teamName.size() <= 50 &&
+             data.leaderId is string && data.leaderId.size() <= 50 &&
+             data.status in ['pending', 'approved', 'rejected', 'paid'];
+    }
+
+    function isValidMatch(data) {
+      return data.keys().hasAll(['tournamentId', 'round', 'matchNumber', 'status']) &&
+             data.tournamentId is string && data.tournamentId.size() <= 64 &&
+             data.round is number &&
+             data.matchNumber is number &&
+             data.status in ['waiting', 'friend_request_pending', 'ready_for_observation', 'live', 'verified', 'disputed', 'completed'];
+    }
+
+    // --- Collection Routes ---
+
+    match /tournaments/{tId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidTournament(incoming());
+    }
+
+    match /registrations/{rId} {
+      // PII Protection: Only owner or admin can read details
+      allow get: if isOwner(existing().userId) || isAdmin();
+      // List rules: Must filter by userId or be admin
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      
+      allow create: if isVerified() && isValidRegistration(incoming()) && 
+                       exists(/databases/$(database)/documents/tournaments/$(incoming().tournamentId));
+      
+      allow update: if (isAdmin() || (isOwner(existing().userId) && existing().status == 'pending')) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'paid', 'teamName', 'leaderId', 'leaderTag', 'email', 'updatedAt']) &&
+                       (isAdmin() || incoming().status == existing().status); // Normal user cannot approve self
+    }
+
+    match /matches/{mId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidMatch(incoming());
+      
+      // CRITICAL: Results only from admin
+      allow update: if (isAdmin() && isValidMatch(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['winnerId', 'loserId', 'scoreA', 'scoreB', 'status', 'operatorObservationStatus', 'operatorNote', 'streamStatus', 'streamUrl', 'verifiedAt'])
+      )) || (
+        // Players might update sub-actions in future, but for now strict admin control
+        false
+      );
+    }
+
+    match /notices/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /alerts/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admins/{id} {
+      allow read: if isAdmin();
+      allow write: if false; // Only manageable via console/bootstrap
+    }
+  }
+}

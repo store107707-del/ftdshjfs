@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: "Arial Black", sans-serif;
+
+  --color-bs-purple: #7D40FF;
+  --color-bs-yellow: #FFCE00;
+  --color-bs-cyan: #00E5FF;
+  --color-bs-red: #FF4B1F;
+  --color-bs-bg: #0D0D12;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-bs-bg text-white font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-outline {
+    -webkit-text-stroke: 2px white;
+    color: transparent;
+  }
+  
+  .shadow-block {
+    box-shadow: 10px 10px 0px var(--color-bs-yellow);
+  }
+
+  .shadow-glow-yellow {
+    box-shadow: 0 0 20px rgba(255, 206, 0, 0.4);
+  }
+
+  .shadow-lightning {
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.6);
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes lightning {
+  0%, 100% { opacity: 0; }
+  2%, 4% { opacity: 1; }
+  3% { opacity: 0.5; }
+  5% { opacity: 0; }
+  60%, 62% { opacity: 0.8; }
+  61% { opacity: 0.2; }
+  63% { opacity: 0; }
+}
+
+@keyframes border-flash {
+  0%, 100% { border-color: rgba(0, 229, 255, 1); box-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+  50% { border-color: rgba(255, 206, 0, 1); box-shadow: 0 0 30px rgba(255, 206, 0, 0.8); }
+}
+
+.animate-lightning {
+  animation: lightning 3s linear infinite;
+}
+
+.animate-border-flash {
+  animation: border-flash 0.5s linear infinite;
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee-slower {
+  animation: marquee 60s linear infinite;
+}

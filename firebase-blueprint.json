@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Tournament metadata and settings",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "prize": { "type": "string" },
+        "fee": { "type": "string" },
+        "status": { "type": "string" },
+        "theme": { "type": "string" },
+        "mode": { "type": "string" },
+        "mapName": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "players": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "prize", "fee", "status"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "Teams or individuals registered for a tournament",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "userId": { "type": "string" },
+        "teamName": { "type": "string" },
+        "leaderId": { "type": "string" },
+        "leaderTag": { "type": "string" },
+        "email": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "paid"] },
+        "paid": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "userId", "teamName", "leaderId", "status"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "An operator-observed match within a tournament",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "round": { "type": "number" },
+        "matchNumber": { "type": "number" },
+        "teamAId": { "type": "string" },
+        "teamBId": { "type": "string" },
+        "teamALeaderTag": { "type": "string" },
+        "teamBLeaderTag": { "type": "string" },
+        "operatorObservationStatus": { "type": "string", "enum": ["pending", "requested", "observing", "verified"] },
+        "operatorNote": { "type": "string" },
+        "streamStatus": { "type": "string", "enum": ["none", "scheduled", "live", "ended"] },
+        "streamUrl": { "type": "string" },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "observedBy": { "type": "string" },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "winnerId": { "type": "string" },
+        "loserId": { "type": "string" },
+        "scoreA": { "type": "number" },
+        "scoreB": { "type": "number" },
+        "status": { "type": "string", "enum": ["waiting", "friend_request_pending", "ready_for_observation", "live", "verified", "disputed", "completed"] }
+      },
+      "required": ["tournamentId", "round", "matchNumber", "status"]
+    },
+    "Notice": {
+      "title": "System Notice",
+      "description": "Global marquee notices for all users",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "number" }
+      },
+      "required": ["content", "createdAt"]
+    },
+    "Alert": {
+      "title": "Urgent Alert",
+      "description": "Short-lived urgent top alerts",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number" }
+      },
+      "required": ["content", "createdAt", "duration"]
+    }
+  },
+  "firestore": {
+    "/tournaments/{tournamentId}": { "schema": "Tournament", "description": "Tournaments collection" },
+    "/registrations/{regId}": { "schema": "Registration", "description": "Flattened registrations for querying" },
+    "/matches/{matchId}": { "schema": "Match", "description": "Matches for all tournaments" },
+    "/notices/{id}": { "schema": "Notice", "description": "Global notices" },
+    "/alerts/{id}": { "schema": "Alert", "description": "Urgent temporary alerts" }
+  }
+}
